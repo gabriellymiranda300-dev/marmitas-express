@@ -1,8 +1,11 @@
 /*
- * Footer — Marmitas Express
+ * Footer — Panela Velha
  * Design: fundo marrom-escuro, texto creme, informações de contato
  */
 import { Clock, Phone, MapPin } from "lucide-react";
+
+const LOGO =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663658405775/kQVQpftc3b77nEataXztAL/logo-panela-velha-NcFZC3CNY46bK2c3BwivHm.webp";
 
 export default function Footer() {
   return (
@@ -12,16 +15,16 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-2xl">🍱</span>
+              <img src={LOGO} alt="Panela Velha" className="h-10 w-auto" />
               <span
-                className="text-xl font-bold text-white"
+                className="text-lg font-bold text-white"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Marmitas Express
+                Panela Velha
               </span>
             </div>
             <p className="text-sm text-[#C4A882] leading-relaxed">
-              Comida caseira com sabor de lar, entregue com carinho e pontualidade.
+              Comida caseira com sabor de lar, feita com carinho e pontualidade.
             </p>
           </div>
 
@@ -36,11 +39,7 @@ export default function Footer() {
             <div className="flex flex-col gap-2 text-sm text-[#C4A882]">
               <div className="flex items-center gap-2">
                 <Clock size={14} className="text-[#E8521A]" />
-                <span>Seg – Sex: 10h às 14h</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock size={14} className="text-[#E8521A]" />
-                <span>Sábado: 10h às 13h</span>
+                <span>Segunda a Sexta: 10h às 14h</span>
               </div>
             </div>
           </div>
@@ -67,7 +66,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/10 mt-8 pt-6 text-center text-xs text-[#8A6A50]">
-          © {new Date().getFullYear()} Marmitas Express. Todos os direitos reservados.
+          © {new Date().getFullYear()} Panela Velha. Todos os direitos reservados.
         </div>
       </div>
     </footer>

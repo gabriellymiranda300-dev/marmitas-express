@@ -1,10 +1,13 @@
 /*
- * Header — Marmitas Express
- * Design: sticky, fundo creme com sombra sutil, logo Fraunces, botão carrinho laranja
+ * Header — Panela Velha
+ * Design: sticky, fundo creme com sombra sutil, logo Panela Velha, botão carrinho laranja
  */
 import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useEffect, useRef, useState } from "react";
+
+const LOGO =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663658405775/kQVQpftc3b77nEataXztAL/logo-panela-velha-NcFZC3CNY46bK2c3BwivHm.webp";
 
 export default function Header() {
   const { items, toggleCart } = useCart();
@@ -26,13 +29,13 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-[#FAFAF7]/95 backdrop-blur-sm border-b border-[#E8DDD5] shadow-sm">
       <div className="container flex items-center justify-between h-16">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🍱</span>
+        <div className="flex items-center gap-3">
+          <img src={LOGO} alt="Panela Velha" className="h-12 w-auto" />
           <span
-            className="text-xl font-bold text-[#2C1810]"
+            className="text-lg font-bold text-[#2C1810] hidden sm:inline"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Marmitas Express
+            Panela Velha
           </span>
         </div>
 

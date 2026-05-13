@@ -1,5 +1,5 @@
 /*
- * Home — Marmitas Express
+ * Home — Panela Velha
  * Design: Bistrô Contemporâneo Limpo
  * Orquestra todos os componentes da página principal
  */

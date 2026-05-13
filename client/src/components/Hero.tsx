@@ -1,10 +1,10 @@
 /*
- * Hero — Marmitas Express
+ * Hero — Panela Velha
  * Design: imagem full-bleed com overlay gradiente escuro, texto branco, CTA laranja
  */
 
 const HERO_IMG =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310519663658405775/kQVQpftc3b77nEataXztAL/hero-marmitas-JzuRxv5ka5XJk23fiYnS9a.webp";
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663658405775/kQVQpftc3b77nEataXztAL/prato-segunda-costela-c23AWFbSHzUb4FYwKaEh8A.webp";
 
 export default function Hero() {
   const scrollToMenu = () => {
@@ -25,18 +25,17 @@ export default function Hero() {
 
       {/* Content */}
       <div className="relative z-10 text-center px-4 max-w-2xl mx-auto fade-in-up">
-        <p className="text-[#F5C99A] text-sm font-semibold uppercase tracking-widest mb-3">
-          Entrega em até 40 minutos
-        </p>
         <h1
           className="text-white text-4xl md:text-6xl font-bold leading-tight mb-4"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          Marmitas Comerciais{" "}
-          <span className="italic text-[#F5A87A]">Semanais</span>
+          Panela Velha
         </h1>
+        <p className="text-[#F5C99A] text-xl md:text-2xl font-semibold italic mb-4">
+          Simples, caseiro e delicioso
+        </p>
         <p className="text-white/80 text-lg mb-8">
-          Comida caseira com sabor de lar. Peça agora e receba fresquinho.
+          Comida feita com amor, como na vovó fazia. Peça agora e receba fresquinho.
         </p>
         <button
           onClick={scrollToMenu}
@@ -48,9 +47,9 @@ export default function Hero() {
         {/* Badges */}
         <div className="flex items-center justify-center gap-6 mt-8">
           {[
-            { icon: "⏱️", label: "40 min" },
             { icon: "🏠", label: "Caseiro" },
             { icon: "⭐", label: "4.9/5" },
+            { icon: "❤️", label: "Feito com amor" },
           ].map(({ icon, label }) => (
             <div key={label} className="flex flex-col items-center gap-1">
               <span className="text-xl">{icon}</span>

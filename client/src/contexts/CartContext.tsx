@@ -1,5 +1,5 @@
 /*
- * CartContext — Marmitas Express
+ * CartContext — Panela Velha
  * Gerencia o estado global do carrinho de compras
  */
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
@@ -21,6 +21,8 @@ interface CartContextType {
   toggleCart: () => void;
   extras: { utensil: boolean; extraSalad: boolean };
   setExtras: (extras: { utensil: boolean; extraSalad: boolean }) => void;
+  potatoSize: "P" | "M" | "G" | null;
+  setPotatoSize: (size: "P" | "M" | "G" | null) => void;
   discount: number;
   setDiscount: (d: number) => void;
   couponCode: string;
@@ -38,6 +40,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [extras, setExtras] = useState({ utensil: false, extraSalad: false });
+  const [potatoSize, setPotatoSize] = useState<"P" | "M" | "G" | null>(null);
   const [discount, setDiscount] = useState(0);
   const [couponCode, setCouponCode] = useState("");
 
@@ -56,13 +59,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setDiscount(0);
     setCouponCode("");
     setExtras({ utensil: false, extraSalad: false });
+    setPotatoSize(null);
   }, []);
 
   const openCart = useCallback(() => setIsOpen(true), []);
   const closeCart = useCallback(() => setIsOpen(false), []);
   const toggleCart = useCallback(() => setIsOpen((v) => !v), []);
 
-  const extrasTotal = (extras.utensil ? 2 : 0) + (extras.extraSalad ? 5 : 0);
+  const potatoPrices: Record<"P" | "M" | "G", number> = { P: 5, M: 7, G: 10 };
+  const potatoPrice = potatoSize ? potatoPrices[potatoSize] : 0;
+  const extrasTotal = (extras.extraSalad ? 5 : 0) + potatoPrice;
   const subtotal = items.reduce((sum, i) => sum + i.price, 0) + extrasTotal;
   const total = Math.max(0, subtotal + SHIPPING - discount);
 
@@ -79,6 +85,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         toggleCart,
         extras,
         setExtras,
+        potatoSize,
+        setPotatoSize,
         discount,
         setDiscount,
         couponCode,

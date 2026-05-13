@@ -1,8 +1,8 @@
 /*
- * CartDrawer — Marmitas Express
- * Design: painel lateral deslizante da direita, overlay escuro, resumo do pedido
+ * CartDrawer — Panela Velha
+ * Design: painel lateral deslizante, pagamento cartão/PIX, aba de confirmação
  */
-import { X, Trash2, Tag, ShoppingBag, MessageCircle } from "lucide-react";
+import { X, Trash2, Tag, ShoppingBag, MessageCircle, CreditCard, QrCode } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -12,6 +12,8 @@ interface CartDrawerProps {
   paymentMethod: string;
 }
 
+type DrawerTab = "cart" | "payment" | "confirmation";
+
 export default function CartDrawer({ customerData, paymentMethod }: CartDrawerProps) {
   const {
     items,
@@ -19,6 +21,7 @@ export default function CartDrawer({ customerData, paymentMethod }: CartDrawerPr
     isOpen,
     closeCart,
     extras,
+    potatoSize,
     discount,
     setDiscount,
     couponCode,
@@ -26,9 +29,20 @@ export default function CartDrawer({ customerData, paymentMethod }: CartDrawerPr
     shipping,
     total,
     subtotal,
+    clearCart,
   } = useCart();
 
+  const [tab, setTab] = useState<DrawerTab>("cart");
   const [couponInput, setCouponInput] = useState("");
+  const [cardData, setCardData] = useState({
+    number: "",
+    name: "",
+    expiry: "",
+    cvv: "",
+  });
+
+  const potatoPrices: Record<"P" | "M" | "G", number> = { P: 5, M: 7, G: 10 };
+  const potatoPrice = potatoSize ? potatoPrices[potatoSize] : 0;
 
   const applyCoupon = () => {
     if (couponInput.trim().toUpperCase() === "DESCONTO10") {
@@ -40,25 +54,37 @@ export default function CartDrawer({ customerData, paymentMethod }: CartDrawerPr
     }
   };
 
-  const finishOrder = () => {
+  const validateOrder = () => {
     if (!customerData.nome || !customerData.telefone) {
       toast.error("Preencha seu nome e telefone antes de finalizar.");
-      closeCart();
-      document.getElementById("dados")?.scrollIntoView({ behavior: "smooth" });
-      return;
+      return false;
     }
     if (items.length === 0) {
       toast.error("Adicione pelo menos um item ao carrinho.");
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const validateCardPayment = () => {
+    if (!cardData.number || !cardData.name || !cardData.expiry || !cardData.cvv) {
+      toast.error("Preencha todos os dados do cartão.");
+      return false;
+    }
+    return true;
+  };
+
+  const finishOrder = () => {
+    if (!validateOrder()) return;
 
     const extrasList = [];
-    if (extras.utensil) extrasList.push("• Talher - R$ 2,00");
+    if (extras.utensil) extrasList.push("• Talher descartável - Sem cobrança");
     if (extras.extraSalad) extrasList.push("• Salada Extra - R$ 5,00");
+    if (potatoSize) extrasList.push(`• Batata Frita ${potatoSize} - R$ ${potatoPrice.toFixed(2)}`);
 
     const itensList = items.map((i) => `• ${i.name} - R$ ${i.price.toFixed(2)}`).join("\n");
 
-    const mensagem = `🍱 NOVO PEDIDO
+    const mensagem = `🍱 NOVO PEDIDO - PANELA VELHA
 
 👤 Cliente: ${customerData.nome}
 📞 Telefone: ${customerData.telefone}
@@ -77,6 +103,9 @@ ${itensList}${extrasList.length ? "\n\n➕ Adicionais:\n" + extrasList.join("\n"
     const numero = "5511999999999";
     const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
     window.open(url, "_blank");
+    clearCart();
+    closeCart();
+    setTab("cart");
   };
 
   if (!isOpen) return null;
@@ -115,54 +144,218 @@ ${itensList}${extrasList.length ? "\n\n➕ Adicionais:\n" + extrasList.join("\n"
           </button>
         </div>
 
-        {/* Items */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
-              <ShoppingBag size={48} className="text-[#DDD5CC]" />
-              <p className="text-[#B0A090] font-medium">Seu carrinho está vazio</p>
-              <p className="text-sm text-[#B0A090]">Adicione itens do cardápio</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between bg-[#FAFAF7] rounded-xl px-4 py-3 border border-[#EDE8E2]"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-[#2C1810]">{item.name}</p>
-                    <p className="text-xs text-[#E8521A] font-bold mt-0.5">
-                      R$ {item.price.toFixed(2).replace(".", ",")}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              ))}
+        {/* Tabs */}
+        {items.length > 0 && (
+          <div className="flex border-b border-[#EDE8E2]">
+            {(["cart", "payment", "confirmation"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`flex-1 py-2 text-xs font-semibold uppercase transition-colors ${
+                  tab === t
+                    ? "text-[#E8521A] border-b-2 border-[#E8521A]"
+                    : "text-[#7A6555] hover:text-[#2C1810]"
+                }`}
+              >
+                {t === "cart" && "Carrinho"}
+                {t === "payment" && "Pagamento"}
+                {t === "confirmation" && "Confirmação"}
+              </button>
+            ))}
+          </div>
+        )}
 
-              {/* Extras summary */}
-              {(extras.utensil || extras.extraSalad) && (
-                <div className="border-t border-[#EDE8E2] pt-3 mt-1">
-                  <p className="text-xs font-semibold text-[#7A6555] mb-2 uppercase tracking-wide">Adicionais</p>
-                  {extras.utensil && (
-                    <div className="flex justify-between text-sm text-[#2C1810]">
-                      <span>Talher</span>
-                      <span className="font-semibold">+ R$ 2,00</span>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {tab === "cart" && (
+            <>
+              {items.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
+                  <ShoppingBag size={48} className="text-[#DDD5CC]" />
+                  <p className="text-[#B0A090] font-medium">Seu carrinho está vazio</p>
+                  <p className="text-sm text-[#B0A090]">Adicione itens do cardápio</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between bg-[#FAFAF7] rounded-xl px-4 py-3 border border-[#EDE8E2]"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-[#2C1810]">{item.name}</p>
+                        <p className="text-xs text-[#E8521A] font-bold mt-0.5">
+                          R$ {item.price.toFixed(2).replace(".", ",")}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Extras summary */}
+                  {(extras.utensil || extras.extraSalad || potatoSize) && (
+                    <div className="border-t border-[#EDE8E2] pt-3 mt-1">
+                      <p className="text-xs font-semibold text-[#7A6555] mb-2 uppercase tracking-wide">Adicionais</p>
+                      {extras.utensil && (
+                        <div className="flex justify-between text-sm text-[#2C1810]">
+                          <span>Talher</span>
+                          <span className="font-semibold">Grátis</span>
+                        </div>
+                      )}
+                      {extras.extraSalad && (
+                        <div className="flex justify-between text-sm text-[#2C1810]">
+                          <span>Salada Extra</span>
+                          <span className="font-semibold">+ R$ 5,00</span>
+                        </div>
+                      )}
+                      {potatoSize && (
+                        <div className="flex justify-between text-sm text-[#2C1810]">
+                          <span>Batata Frita {potatoSize}</span>
+                          <span className="font-semibold">+ R$ {potatoPrice.toFixed(2).replace(".", ",")}</span>
+                        </div>
+                      )}
                     </div>
                   )}
-                  {extras.extraSalad && (
-                    <div className="flex justify-between text-sm text-[#2C1810]">
-                      <span>Salada Extra</span>
-                      <span className="font-semibold">+ R$ 5,00</span>
+
+                  {/* Coupon */}
+                  <div className="border-t border-[#EDE8E2] pt-3 mt-3 flex gap-2">
+                    <div className="relative flex-1">
+                      <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B0A090]" />
+                      <input
+                        type="text"
+                        placeholder="Cupom"
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+                        className="w-full pl-9 pr-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-[#FAFAF7]"
+                      />
                     </div>
-                  )}
+                    <button
+                      onClick={applyCoupon}
+                      className="bg-[#2C1810] hover:bg-[#3D2218] active:scale-95 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-150"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
                 </div>
               )}
+            </>
+          )}
+
+          {tab === "payment" && items.length > 0 && (
+            <div className="flex flex-col gap-4">
+              {paymentMethod === "Pix" && (
+                <div className="flex flex-col items-center gap-4 py-6">
+                  <QrCode size={120} className="text-[#E8521A]" />
+                  <p className="text-sm text-[#7A6555] text-center">
+                    Escaneie o QR code com seu app de banco para pagar via Pix
+                  </p>
+                  <div className="w-full bg-[#FAFAF7] rounded-xl p-4 text-center">
+                    <p className="text-xs text-[#7A6555] mb-2">Chave Pix (aleatória)</p>
+                    <p className="text-sm font-mono text-[#2C1810] break-all">
+                      a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {(paymentMethod === "Cartão de Crédito" || paymentMethod === "Cartão de Débito") && (
+                <div className="flex flex-col gap-4 py-4">
+                  <div>
+                    <label className="text-xs font-semibold text-[#2C1810] block mb-1.5">
+                      Número do Cartão
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="0000 0000 0000 0000"
+                      value={cardData.number}
+                      onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
+                      className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-[#2C1810] block mb-1.5">
+                      Nome do Titular
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="NOME COMPLETO"
+                      value={cardData.name}
+                      onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
+                      className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-[#2C1810] block mb-1.5">
+                        Validade
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="MM/AA"
+                        value={cardData.expiry}
+                        onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
+                        className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[#2C1810] block mb-1.5">
+                        CVV
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="000"
+                        value={cardData.cvv}
+                        onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
+                        className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === "Dinheiro" && (
+                <div className="py-6 text-center">
+                  <p className="text-sm text-[#7A6555]">
+                    Pagamento em dinheiro na entrega. Tenha o valor exato disponível.
+                  </p>
+                </div>
+              )}
+
+              {paymentMethod === "Pagar na Entrega" && (
+                <div className="py-6 text-center">
+                  <p className="text-sm text-[#7A6555]">
+                    Você pagará quando o pedido chegar. Cartão ou dinheiro.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === "confirmation" && items.length > 0 && (
+            <div className="flex flex-col gap-4 py-4">
+              <div className="bg-[#FFF4EF] rounded-xl p-4 border border-[#E8521A]/20">
+                <p className="text-xs font-semibold text-[#E8521A] uppercase mb-3">Dados de Entrega</p>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <p className="text-[#7A6555]">Nome</p>
+                    <p className="font-semibold text-[#2C1810]">{customerData.nome}</p>
+                  </div>
+                  <div>
+                    <p className="text-[#7A6555]">Telefone</p>
+                    <p className="font-semibold text-[#2C1810]">{customerData.telefone}</p>
+                  </div>
+                  <div>
+                    <p className="text-[#7A6555]">Endereço</p>
+                    <p className="font-semibold text-[#2C1810]">{customerData.endereco || "Não informado"}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -170,27 +363,6 @@ ${itensList}${extrasList.length ? "\n\n➕ Adicionais:\n" + extrasList.join("\n"
         {/* Footer */}
         {items.length > 0 && (
           <div className="border-t border-[#EDE8E2] px-5 py-4 flex flex-col gap-4">
-            {/* Coupon */}
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B0A090]" />
-                <input
-                  type="text"
-                  placeholder="Cupom de desconto"
-                  value={couponInput}
-                  onChange={(e) => setCouponInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
-                  className="w-full pl-9 pr-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-[#FAFAF7]"
-                />
-              </div>
-              <button
-                onClick={applyCoupon}
-                className="bg-[#2C1810] hover:bg-[#3D2218] active:scale-95 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-150"
-              >
-                Aplicar
-              </button>
-            </div>
-
             {/* Summary */}
             <div className="flex flex-col gap-1.5 text-sm">
               <div className="flex justify-between text-[#7A6555]">
@@ -215,14 +387,34 @@ ${itensList}${extrasList.length ? "\n\n➕ Adicionais:\n" + extrasList.join("\n"
               </div>
             </div>
 
-            {/* Finish button */}
-            <button
-              onClick={finishOrder}
-              className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe5a] active:scale-95 text-white font-bold py-3.5 rounded-xl transition-all duration-150 shadow-md shadow-green-900/20"
-            >
-              <MessageCircle size={18} />
-              Finalizar via WhatsApp
-            </button>
+            {/* Action buttons */}
+            {tab === "cart" && (
+              <button
+                onClick={() => setTab("payment")}
+                className="w-full bg-[#E8521A] hover:bg-[#C94415] active:scale-95 text-white font-bold py-3.5 rounded-xl transition-all duration-150"
+              >
+                Próximo: Pagamento
+              </button>
+            )}
+
+            {tab === "payment" && (
+              <button
+                onClick={() => setTab("confirmation")}
+                className="w-full bg-[#E8521A] hover:bg-[#C94415] active:scale-95 text-white font-bold py-3.5 rounded-xl transition-all duration-150"
+              >
+                Revisar Pedido
+              </button>
+            )}
+
+            {tab === "confirmation" && (
+              <button
+                onClick={finishOrder}
+                className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe5a] active:scale-95 text-white font-bold py-3.5 rounded-xl transition-all duration-150 shadow-md shadow-green-900/20"
+              >
+                <MessageCircle size={18} />
+                Finalizar via WhatsApp
+              </button>
+            )}
           </div>
         )}
       </div>
