@@ -59,7 +59,14 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin size={14} className="text-[#E8521A]" />
-                <span>Avenida dos Estados, número 549, Jardim São Paulo, São Paulo/SP, CEP: 04.123-000</span>
+                <a
+                  href="https://www.google.com/maps/search/Avenida+dos+Estados,+549,+Jardim+São+Paulo,+São+Paulo,+SP"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#E8521A] hover:text-[#C94415] hover:underline transition-colors"
+                >
+                  Avenida dos Estados, número 549, Jardim São Paulo, São Paulo/SP, CEP: 04.123-000
+                </a>
               </div>
             </div>
           </div>

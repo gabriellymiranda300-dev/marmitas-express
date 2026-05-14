@@ -1,10 +1,11 @@
 /*
  * ExtrasPayment — Panela Velha
- * Design: fundo cinza-quente, checkboxes customizados, batata frita P/M/G
+ * Design: fundo cinza-quente, checkboxes customizados, batata frita P/M/G com botões
  */
 import { useCart } from "@/contexts/CartContext";
-import { CreditCard, Utensils, Zap } from "lucide-react";
+import { CreditCard, Utensils, Zap, ShoppingCart } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface ExtrasPaymentProps {
   paymentMethod: string;
@@ -17,11 +18,18 @@ interface PotatoSize {
 }
 
 export default function ExtrasPayment({ paymentMethod, onPaymentChange }: ExtrasPaymentProps) {
-  const { extras, setExtras } = useCart();
-  const [potatoSize, setPotatoSize] = useState<"P" | "M" | "G" | null>(null);
+  const { extras, setExtras, addItem } = useCart();
 
   const toggleExtra = (key: "utensil" | "extraSalad") => {
     setExtras({ ...extras, [key]: !extras[key] });
+  };
+
+  const handleAddPotato = (size: "P" | "M" | "G", price: number) => {
+    addItem({ name: `Batata Frita ${size}`, price });
+    toast.success(`Batata Frita ${size} adicionada!`, {
+      description: `R$ ${price.toFixed(2).replace(".", ",")}`,
+      duration: 2000,
+    });
   };
 
   const potatoOptions: PotatoSize[] = [
@@ -81,20 +89,21 @@ export default function ExtrasPayment({ paymentMethod, onPaymentChange }: Extras
                   <Zap size={16} className="text-[#E8521A]" />
                   Batata Frita
                 </p>
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3">
                   {potatoOptions.map(({ size, price }) => (
-                    <button
-                      key={size}
-                      onClick={() => setPotatoSize(potatoSize === size ? null : size)}
-                      className={`flex-1 py-3 px-4 rounded-lg border-2 font-semibold text-sm transition-all duration-150 ${
-                        potatoSize === size
-                          ? "border-[#E8521A] bg-[#FFF4EF] text-[#E8521A]"
-                          : "border-[#DDD5CC] bg-white text-[#2C1810] hover:border-[#E8521A]/40"
-                      }`}
-                    >
-                      <div>{size}</div>
-                      <div className="text-xs mt-1">R$ {price.toFixed(2).replace(".", ",")}</div>
-                    </button>
+                    <div key={size} className="flex items-center gap-3 bg-white rounded-lg border border-[#DDD5CC] p-3 hover:border-[#E8521A]/40 transition-colors">
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-[#2C1810]">Tamanho {size}</p>
+                        <p className="text-xs text-[#E8521A] font-bold mt-0.5">R$ {price.toFixed(2).replace(".", ",")}</p>
+                      </div>
+                      <button
+                        onClick={() => handleAddPotato(size, price)}
+                        className="flex items-center gap-1 bg-[#E8521A] hover:bg-[#C94415] active:scale-95 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-all duration-150 shadow-sm"
+                      >
+                        <ShoppingCart size={13} />
+                        Add
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
