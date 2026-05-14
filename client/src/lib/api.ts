@@ -51,46 +51,27 @@ export async function sendOrderToAPI(orderData: OrderData): Promise<boolean> {
       !orderData.items ||
       orderData.total <= 0
     ) {
-      console.error("❌ Dados do pedido incompletos");
+      console.error("Dados do pedido incompletos");
       toast.error("Erro", {
         description: "Por favor, preencha todos os dados do pedido.",
       });
       return false;
     }
 
-    // Preparar dados para enviar à API
+    // Preparar dados para enviar à API (formato simplificado)
     const apiOrder = {
-      id: `web-${Date.now()}`, // ID único baseado no timestamp
+      id: `web-${Date.now()}`,
       client: orderData.clientName,
       phone: orderData.clientPhone,
       address: `${orderData.clientAddress.rua}, ${orderData.clientAddress.numero}${orderData.clientAddress.complemento ? " - " + orderData.clientAddress.complemento : ""} - ${orderData.clientAddress.cep} - ${orderData.clientAddress.cidade}/${orderData.clientAddress.estado}`,
-      items: orderData.items
-        .map((item) => {
-          const qty = item.quantity || 1;
-          return `${item.name} (${qty}x) - R$ ${(item.price * qty).toFixed(2).replace(".", ",")}`;
-        })
-        .join(" | "),
-      extras: [
-        orderData.extras.utensil ? "Talher" : null,
-        orderData.extras.extraSalad ? "Salada Extra" : null,
-        orderData.extras.potatoSize
-          ? `Batata Frita - ${orderData.extras.potatoSize}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join(", "),
-      subtotal: parseFloat(orderData.subtotal.toFixed(2)),
-      discount: parseFloat(orderData.discount.toFixed(2)),
-      shipping: parseFloat(orderData.shipping.toFixed(2)),
-      total: parseFloat(orderData.total.toFixed(2)),
+      items: orderData.items.map((item) => `${item.name} (1x)`).join(", "),
+      total: orderData.total,
       paymentMethod: orderData.paymentMethod || "Não especificado",
-      changeValue: orderData.changeValue || null,
       status: "pending",
       source: "website",
-      timestamp: new Date().toISOString(),
     };
 
-    console.log("📤 Enviando pedido para o painel...", apiOrder);
+    console.log("Enviando pedido para o painel...", apiOrder);
 
     // Requisição POST para a API
     const response = await fetch(PAINEL_API_URL, {
@@ -109,7 +90,7 @@ export async function sendOrderToAPI(orderData: OrderData): Promise<boolean> {
     const result = await response.json();
 
     if (result.success || response.ok) {
-      console.log("✅ Pedido enviado com sucesso!", result);
+      console.log("Pedido enviado com sucesso!", result);
       toast.success("Pedido recebido!", {
         description:
           "Seu pedido foi enviado para o painel. Acompanhe o status no WhatsApp.",
@@ -119,7 +100,7 @@ export async function sendOrderToAPI(orderData: OrderData): Promise<boolean> {
       throw new Error(result.error || "Erro desconhecido");
     }
   } catch (error) {
-    console.error("❌ Erro ao enviar pedido:", error);
+    console.error("Erro ao enviar pedido:", error);
     toast.error("Erro ao enviar pedido", {
       description: "Tente novamente em alguns momentos.",
     });
