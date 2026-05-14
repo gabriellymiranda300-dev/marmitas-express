@@ -42,6 +42,7 @@ export default function CartDrawer({ customerData, onCustomerChange, paymentMeth
     clearCart,
     changeValue,
     setChangeValue,
+    calculateShipping,
   } = useCart();
 
   const [tab, setTab] = useState<DrawerTab>("dados");
@@ -243,7 +244,14 @@ ${paymentInfo}
                       type="text"
                       placeholder="CEP"
                       value={customerData.cep}
-                      onChange={(e) => onCustomerChange("cep", e.target.value)}
+                      onChange={(e) => {
+                        const cep = e.target.value;
+                        onCustomerChange("cep", cep);
+                        // Calcula frete quando CEP tem pelo menos 5 dígitos
+                        if (cep.replace(/\D/g, "").length >= 5) {
+                          calculateShipping(cep);
+                        }
+                      }}
                       className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
                     />
                   </div>

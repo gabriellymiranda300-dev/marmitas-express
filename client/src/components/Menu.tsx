@@ -53,13 +53,13 @@ const DAILY_MENU = [
 const BEVERAGES = [
   { id: "coca-zero", name: "Coca-Cola Zero", size: "500ml (lata)", price: 5.0 },
   { id: "coca-normal", name: "Coca-Cola Normal", size: "500ml (lata)", price: 5.0 },
-  { id: "sprite", name: "Sprite Lemon Fresh", size: "500ml (lata)", price: 5.0 },
+  { id: "sprite", name: "Sprite Lemon Fresh", size: "500ml", price: 5.0 },
   { id: "fanta", name: "Fanta Uva", size: "500ml (lata)", price: 5.0 },
   { id: "guarana", name: "Guaraná", size: "500ml (lata)", price: 5.0 },
-  { id: "suco-maracuja", name: "Suco Natural Maracujá", price: 6.0 },
-  { id: "suco-laranja", name: "Suco Natural Laranja", price: 6.0 },
-  { id: "agua-com-gas", name: "Água com Gás", price: 3.0 },
-  { id: "agua-sem-gas", name: "Água sem Gás", price: 2.5 },
+  { id: "suco-maracuja", name: "Suco Natural Maracujá", size: "500ml", price: 6.0 },
+  { id: "suco-laranja", name: "Suco Natural Laranja", size: "500ml", price: 6.0 },
+  { id: "agua-com-gas", name: "Água com Gás", size: "500ml", price: 3.0 },
+  { id: "agua-sem-gas", name: "Água sem Gás", size: "500ml", price: 2.5 },
 ];
 
 export default function Menu() {
