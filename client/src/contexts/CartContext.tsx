@@ -10,6 +10,15 @@ export interface CartItem {
   price: number;
 }
 
+export interface CustomerAddress {
+  rua: string;
+  numero: string;
+  complemento: string;
+  cep: string;
+  cidade: string;
+  estado: string;
+}
+
 interface CartContextType {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "id">) => void;
@@ -30,6 +39,8 @@ interface CartContextType {
   shipping: number;
   total: number;
   subtotal: number;
+  changeValue: number;
+  setChangeValue: (v: number) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -43,6 +54,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [potatoSize, setPotatoSize] = useState<"P" | "M" | "G" | null>(null);
   const [discount, setDiscount] = useState(0);
   const [couponCode, setCouponCode] = useState("");
+  const [changeValue, setChangeValue] = useState(0);
 
   const addItem = useCallback((item: Omit<CartItem, "id">) => {
     const id = `${item.name}-${Date.now()}-${Math.random()}`;
@@ -94,6 +106,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         shipping: SHIPPING,
         total,
         subtotal,
+        changeValue,
+        setChangeValue,
       }}
     >
       {children}

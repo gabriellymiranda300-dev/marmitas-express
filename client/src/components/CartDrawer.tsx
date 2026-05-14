@@ -2,14 +2,23 @@
  * CartDrawer — Panela Velha
  * Design: painel lateral deslizante, dados do cliente, pagamento cartão/PIX, aba de confirmação
  */
-import { X, Trash2, Tag, ShoppingBag, MessageCircle, CreditCard, QrCode, User, Phone, MapPin } from "lucide-react";
+import { X, Trash2, Tag, ShoppingBag, MessageCircle, CreditCard, QrCode, User, Phone, MapPin, DollarSign } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useState } from "react";
 import { toast } from "sonner";
 
 interface CartDrawerProps {
-  customerData: { nome: string; telefone: string; endereco: string };
-  onCustomerChange: (field: string, value: string) => void;
+  customerData: {
+    nome: string;
+    telefone: string;
+    rua: string;
+    numero: string;
+    complemento: string;
+    cep: string;
+    cidade: string;
+    estado: string;
+  };
+  onCustomerChange: (field: string, value: string | number) => void;
   paymentMethod: string;
 }
 
@@ -31,6 +40,8 @@ export default function CartDrawer({ customerData, onCustomerChange, paymentMeth
     total,
     subtotal,
     clearCart,
+    changeValue,
+    setChangeValue,
   } = useCart();
 
   const [tab, setTab] = useState<DrawerTab>("dados");
@@ -67,12 +78,16 @@ export default function CartDrawer({ customerData, onCustomerChange, paymentMeth
     return true;
   };
 
-  const validateCardPayment = () => {
-    if (!cardData.number || !cardData.name || !cardData.expiry || !cardData.cvv) {
-      toast.error("Preencha todos os dados do cartão.");
-      return false;
-    }
-    return true;
+  const buildAddressString = () => {
+    const parts = [
+      customerData.rua,
+      customerData.numero,
+      customerData.complemento,
+      customerData.cep,
+      customerData.cidade,
+      customerData.estado,
+    ].filter(Boolean);
+    return parts.join(", ");
   };
 
   const finishOrder = () => {
@@ -84,17 +99,23 @@ export default function CartDrawer({ customerData, onCustomerChange, paymentMeth
     if (potatoSize) extrasList.push(`• Batata Frita ${potatoSize} - R$ ${potatoPrice.toFixed(2)}`);
 
     const itensList = items.map((i) => `• ${i.name} - R$ ${i.price.toFixed(2)}`).join("\n");
+    const addressString = buildAddressString();
+
+    let paymentInfo = `💳 Pagamento: ${paymentMethod}`;
+    if (paymentMethod === "Dinheiro" && changeValue > 0) {
+      paymentInfo += `\n💰 Troco para: R$ ${changeValue.toFixed(2)}`;
+    }
 
     const mensagem = `🍱 NOVO PEDIDO - PANELA VELHA
 
 👤 Cliente: ${customerData.nome}
 📞 Telefone: ${customerData.telefone}
-📍 Endereço: ${customerData.endereco || "Retirada no local"}
+📍 Endereço: ${addressString || "Retirada no local"}
 
 🛒 Itens:
 ${itensList}${extrasList.length ? "\n\n➕ Adicionais:\n" + extrasList.join("\n") : ""}
 
-💳 Pagamento: ${paymentMethod}
+${paymentInfo}
 🚚 Frete: R$ ${shipping.toFixed(2)}${discount > 0 ? `\n🏷️ Desconto: - R$ ${discount.toFixed(2)}` : ""}
 
 💰 Total: R$ ${total.toFixed(2)}
@@ -195,18 +216,61 @@ ${itensList}${extrasList.length ? "\n\n➕ Adicionais:\n" + extrasList.join("\n"
                   className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
                 />
               </div>
-              <div>
-                <label className="text-xs font-semibold text-[#2C1810] block mb-1.5 flex items-center gap-1">
+
+              {/* Endereço separado */}
+              <div className="border-t border-[#EDE8E2] pt-4">
+                <p className="text-xs font-semibold text-[#2C1810] mb-3 flex items-center gap-1">
                   <MapPin size={14} className="text-[#E8521A]" />
                   Endereço de entrega
-                </label>
-                <textarea
-                  placeholder="Rua, número, bairro, complemento"
-                  value={customerData.endereco}
-                  onChange={(e) => onCustomerChange("endereco", e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white resize-none"
-                />
+                </p>
+                <div className="flex flex-col gap-3">
+                  <input
+                    type="text"
+                    placeholder="Rua"
+                    value={customerData.rua}
+                    onChange={(e) => onCustomerChange("rua", e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Número"
+                      value={customerData.numero}
+                      onChange={(e) => onCustomerChange("numero", e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="CEP"
+                      value={customerData.cep}
+                      onChange={(e) => onCustomerChange("cep", e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Complemento (apto, sala, etc)"
+                    value={customerData.complemento}
+                    onChange={(e) => onCustomerChange("complemento", e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Cidade"
+                      value={customerData.cidade}
+                      onChange={(e) => onCustomerChange("cidade", e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Estado (SP)"
+                      value={customerData.estado}
+                      onChange={(e) => onCustomerChange("estado", e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -364,10 +428,23 @@ ${itensList}${extrasList.length ? "\n\n➕ Adicionais:\n" + extrasList.join("\n"
               )}
 
               {paymentMethod === "Dinheiro" && (
-                <div className="py-6 text-center">
+                <div className="flex flex-col gap-4 py-4">
                   <p className="text-sm text-[#7A6555]">
                     Pagamento em dinheiro na entrega. Tenha o valor exato disponível.
                   </p>
+                  <div>
+                    <label className="text-xs font-semibold text-[#2C1810] block mb-1.5 flex items-center gap-1">
+                      <DollarSign size={14} className="text-[#E8521A]" />
+                      Troco para:
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Digite o valor em R$"
+                      value={changeValue || ""}
+                      onChange={(e) => setChangeValue(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -396,7 +473,7 @@ ${itensList}${extrasList.length ? "\n\n➕ Adicionais:\n" + extrasList.join("\n"
                   </div>
                   <div>
                     <p className="text-[#7A6555]">Endereço</p>
-                    <p className="font-semibold text-[#2C1810]">{customerData.endereco || "Não informado"}</p>
+                    <p className="font-semibold text-[#2C1810]">{buildAddressString() || "Não informado"}</p>
                   </div>
                 </div>
               </div>

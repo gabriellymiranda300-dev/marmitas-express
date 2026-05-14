@@ -6,7 +6,6 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import CustomerForm from "@/components/CustomerForm";
 import Menu from "@/components/Menu";
 import ExtrasPayment from "@/components/ExtrasPayment";
 import CartDrawer from "@/components/CartDrawer";
@@ -17,11 +16,16 @@ export default function Home() {
   const [customerData, setCustomerData] = useState({
     nome: "",
     telefone: "",
-    endereco: "",
+    rua: "",
+    numero: "",
+    complemento: "",
+    cep: "",
+    cidade: "",
+    estado: "",
   });
   const [paymentMethod, setPaymentMethod] = useState("Pix");
 
-  const handleCustomerChange = (field: string, value: string) => {
+  const handleCustomerChange = (field: string, value: string | number) => {
     setCustomerData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -30,7 +34,6 @@ export default function Home() {
       <Header />
       <main className="flex-1">
         <Hero />
-
         <Menu />
         <ExtrasPayment
           paymentMethod={paymentMethod}
@@ -39,7 +42,11 @@ export default function Home() {
         <ReviewSection />
       </main>
       <Footer />
-      <CartDrawer customerData={customerData} onCustomerChange={handleCustomerChange} paymentMethod={paymentMethod} />
+      <CartDrawer
+        customerData={customerData}
+        onCustomerChange={handleCustomerChange}
+        paymentMethod={paymentMethod}
+      />
     </div>
   );
 }
