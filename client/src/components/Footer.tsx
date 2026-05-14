@@ -59,7 +59,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin size={14} className="text-[#E8521A]" />
-                <span>São Paulo, SP</span>
+                <span>Avenida dos Estados, número 549, Jardim São Paulo, São Paulo/SP, CEP: 04.123-000</span>
               </div>
             </div>
           </div>
