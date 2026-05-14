@@ -51,11 +51,11 @@ const DAILY_MENU = [
 ];
 
 const BEVERAGES = [
-  { id: "coca-zero", name: "Coca-Cola Zero", price: 5.0 },
-  { id: "coca-normal", name: "Coca-Cola Normal", price: 5.0 },
-  { id: "sprite", name: "Sprite", price: 5.0 },
-  { id: "fanta", name: "Fanta", price: 5.0 },
-  { id: "guarana", name: "Guaraná", price: 5.0 },
+  { id: "coca-zero", name: "Coca-Cola Zero", size: "500ml (lata)", price: 5.0 },
+  { id: "coca-normal", name: "Coca-Cola Normal", size: "500ml (lata)", price: 5.0 },
+  { id: "sprite", name: "Sprite Lemon Fresh", size: "500ml (lata)", price: 5.0 },
+  { id: "fanta", name: "Fanta Uva", size: "500ml (lata)", price: 5.0 },
+  { id: "guarana", name: "Guaraná", size: "500ml (lata)", price: 5.0 },
   { id: "suco-maracuja", name: "Suco Natural Maracujá", price: 6.0 },
   { id: "suco-laranja", name: "Suco Natural Laranja", price: 6.0 },
   { id: "agua-com-gas", name: "Água com Gás", price: 3.0 },
@@ -152,6 +152,11 @@ export default function Menu() {
                   <p className="text-sm font-semibold text-[#2C1810]">
                     {beverage.name}
                   </p>
+                  {beverage.size && (
+                    <p className="text-xs text-[#7A6555] mt-0.5">
+                      {beverage.size}
+                    </p>
+                  )}
                   <p className="text-xs text-[#E8521A] font-bold mt-1">
                     R$ {beverage.price.toFixed(2).replace(".", ",")}
                   </p>
