@@ -247,9 +247,9 @@ ${paymentInfo}
                       onChange={(e) => {
                         const cep = e.target.value;
                         onCustomerChange("cep", cep);
-                        // Calcula frete quando CEP tem pelo menos 5 dígitos
-                        if (cep.replace(/\D/g, "").length >= 5) {
-                          calculateShipping(cep);
+                        // Calcula frete quando cidade e estado estão preenchidos
+                        if (customerData.cidade && customerData.estado) {
+                          calculateShipping(customerData.cidade, customerData.estado);
                         }
                       }}
                       className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
@@ -267,14 +267,26 @@ ${paymentInfo}
                       type="text"
                       placeholder="Cidade"
                       value={customerData.cidade}
-                      onChange={(e) => onCustomerChange("cidade", e.target.value)}
+                      onChange={(e) => {
+                        const cidade = e.target.value;
+                        onCustomerChange("cidade", cidade);
+                        if (cidade && customerData.estado) {
+                          calculateShipping(cidade, customerData.estado);
+                        }
+                      }}
                       className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
                     />
                     <input
                       type="text"
                       placeholder="Estado (SP)"
                       value={customerData.estado}
-                      onChange={(e) => onCustomerChange("estado", e.target.value)}
+                      onChange={(e) => {
+                        const estado = e.target.value;
+                        onCustomerChange("estado", estado);
+                        if (customerData.cidade && estado) {
+                          calculateShipping(customerData.cidade, estado);
+                        }
+                      }}
                       className="w-full px-3 py-2.5 text-sm border border-[#DDD5CC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E8521A]/40 focus:border-[#E8521A] bg-white"
                     />
                   </div>
