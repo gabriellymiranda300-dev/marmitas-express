@@ -30,14 +30,7 @@ export default function Home() {
       <Header />
       <main className="flex-1">
         <Hero />
-        <section id="dados">
-          <CustomerForm
-            nome={customerData.nome}
-            telefone={customerData.telefone}
-            endereco={customerData.endereco}
-            onChange={handleCustomerChange}
-          />
-        </section>
+
         <Menu />
         <ExtrasPayment
           paymentMethod={paymentMethod}
@@ -46,7 +39,7 @@ export default function Home() {
         <ReviewSection />
       </main>
       <Footer />
-      <CartDrawer customerData={customerData} paymentMethod={paymentMethod} />
+      <CartDrawer customerData={customerData} onCustomerChange={handleCustomerChange} paymentMethod={paymentMethod} />
     </div>
   );
 }
