@@ -6,6 +6,7 @@ import { X, Trash2, Tag, ShoppingBag, MessageCircle, CreditCard, QrCode, User, P
 import { useCart } from "@/contexts/CartContext";
 import { useState } from "react";
 import { toast } from "sonner";
+import { sendOrderToAPI, sendOrderViaWhatsApp, type OrderData } from "@/lib/api";
 
 interface CartDrawerProps {
   customerData: {
@@ -91,44 +92,58 @@ export default function CartDrawer({ customerData, onCustomerChange, paymentMeth
     return parts.join(", ");
   };
 
-  const finishOrder = () => {
+  const finishOrder = async () => {
     if (!validateOrder()) return;
 
-    const extrasList = [];
-    if (extras.utensil) extrasList.push("• Talher descartável - Sem cobrança");
-    if (extras.extraSalad) extrasList.push("• Salada Extra - R$ 5,00");
-    if (potatoSize) extrasList.push(`• Batata Frita ${potatoSize} - R$ ${potatoPrice.toFixed(2)}`);
+    // Preparar dados do pedido para enviar à API
+    const orderData: OrderData = {
+      clientName: customerData.nome,
+      clientPhone: customerData.telefone,
+      clientAddress: {
+        rua: customerData.rua,
+        numero: customerData.numero,
+        complemento: customerData.complemento,
+        cep: customerData.cep,
+        cidade: customerData.cidade,
+        estado: customerData.estado,
+      },
+      items: items.map((item) => ({
+        name: item.name,
+        price: item.price,
+        quantity: 1,
+      })),
+      extras: {
+        utensil: extras.utensil,
+        extraSalad: extras.extraSalad,
+        potatoSize: potatoSize || undefined,
+      },
+      paymentMethod,
+      changeValue: paymentMethod === "Dinheiro" ? changeValue : undefined,
+      discount,
+      shipping,
+      subtotal,
+      total,
+    };
 
-    const itensList = items.map((i) => `• ${i.name} - R$ ${i.price.toFixed(2)}`).join("\n");
-    const addressString = buildAddressString();
+    // Enviar para a API do painel
+    const success = await sendOrderToAPI(orderData);
 
-    let paymentInfo = `💳 Pagamento: ${paymentMethod}`;
-    if (paymentMethod === "Dinheiro" && changeValue > 0) {
-      paymentInfo += `\n💰 Troco para: R$ ${changeValue.toFixed(2)}`;
+    if (success) {
+      // Se API funcionou, também enviar via WhatsApp como confirmação
+      setTimeout(() => {
+        sendOrderViaWhatsApp(orderData);
+      }, 500);
+      clearCart();
+      closeCart();
+      setTab("dados");
+    } else {
+      // Se API falhar, enviar apenas via WhatsApp
+      console.log("API falhou, enviando via WhatsApp como fallback");
+      sendOrderViaWhatsApp(orderData);
+      clearCart();
+      closeCart();
+      setTab("dados");
     }
-
-    const mensagem = `🍱 NOVO PEDIDO - PANELA VELHA
-
-👤 Cliente: ${customerData.nome}
-📞 Telefone: ${customerData.telefone}
-📍 Endereço: ${addressString || "Retirada no local"}
-
-🛒 Itens:
-${itensList}${extrasList.length ? "\n\n➕ Adicionais:\n" + extrasList.join("\n") : ""}
-
-${paymentInfo}
-🚚 Frete: R$ ${shipping.toFixed(2)}${discount > 0 ? `\n🏷️ Desconto: - R$ ${discount.toFixed(2)}` : ""}
-
-💰 Total: R$ ${total.toFixed(2)}
-
-⏰ Prazo estimado: 40 minutos`;
-
-    const numero = "5511941462504";
-    const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, "_blank");
-    clearCart();
-    closeCart();
-    setTab("dados");
   };
 
   if (!isOpen) return null;
