@@ -60,12 +60,12 @@ export default function Footer() {
               <div className="flex items-center gap-2">
                 <MapPin size={14} className="text-[#E8521A]" />
                 <a
-                  href="https://www.google.com/maps/search/Avenida+dos+Estados,+549,+Jardim+São+Paulo,+São+Paulo,+SP"
+                  href="https://www.google.com/maps/search/Av.+Otto+Baumgart,+549,+Vila+Guilherme,+São+Paulo,+SP,+02049-015"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[#E8521A] hover:text-[#C94415] hover:underline transition-colors"
                 >
-                  Avenida dos Estados, número 549, Jardim São Paulo, São Paulo/SP, CEP: 04.123-000
+                  Av. Otto Baumgart, 549 - Vila Guilherme, São Paulo - SP, 02049-015
                 </a>
               </div>
             </div>
