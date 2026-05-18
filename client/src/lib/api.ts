@@ -1,17 +1,38 @@
 /*
  * API Integration - Panela Velha
  * Envia pedidos do site para o painel de administração via API REST
+ * e carrega o cardápio público quando disponível.
  */
 
 import { toast } from "sonner";
 
-// Configuração da URL da API do painel
-const PAINEL_API_URL = "https://panelavelha-bbdz2awd.manus.space/api/orders";
+const DEFAULT_PAINEL_API_URL = "https://panelavelha-2cnz98kw.manus.space/api/integration";
+const configuredUrl = import.meta.env.VITE_PAINEL_API_URL as string | undefined;
+export const PAINEL_API_URL = (configuredUrl || DEFAULT_PAINEL_API_URL ).replace(/\/$/, "");
+
+export interface MenuItemFromAPI {
+  id: number;
+  categoryId: number;
+  name: string;
+  description?: string | null;
+  price: string | number;
+  imageUrl?: string | null;
+  available?: boolean;
+}
+
+export interface MenuCategoryFromAPI {
+  id: number;
+  name: string;
+  description?: string | null;
+  items: MenuItemFromAPI[];
+}
 
 export interface OrderItem {
+  menuItemId?: number;
   name: string;
   price: number;
   quantity?: number;
+  notes?: string;
 }
 
 export interface OrderData {
@@ -39,16 +60,61 @@ export interface OrderData {
   total: number;
 }
 
+export async function fetchMenuFromAPI(): Promise<MenuCategoryFromAPI[]> {
+  const response = await fetch(`${PAINEL_API_URL}/menu`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Erro ao carregar cardápio: ${response.status}`);
+  }
+
+  const result = await response.json();
+  if (!result.success || !Array.isArray(result.data)) {
+    throw new Error(result.error || "Resposta inválida da API de cardápio");
+  }
+
+  return result.data;
+}
+
+function formatAddress(orderData: OrderData): string {
+  return `${orderData.clientAddress.rua}, ${orderData.clientAddress.numero}${orderData.clientAddress.complemento ? " - " + orderData.clientAddress.complemento : ""} - ${orderData.clientAddress.cep} - ${orderData.clientAddress.cidade}/${orderData.clientAddress.estado}`;
+}
+
+function buildOrderNotes(orderData: OrderData): string {
+  const extrasList = [
+    orderData.extras.utensil ? "Talher" : null,
+    orderData.extras.extraSalad ? "Salada extra" : null,
+    orderData.extras.potatoSize ? `Batata frita ${orderData.extras.potatoSize}` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return [
+    `Endereço: ${formatAddress(orderData)}`,
+    extrasList ? `Adicionais: ${extrasList}` : null,
+    `Subtotal: R$ ${orderData.subtotal.toFixed(2)}`,
+    `Frete: R$ ${orderData.shipping.toFixed(2)}`,
+    orderData.discount > 0 ? `Desconto: R$ ${orderData.discount.toFixed(2)}` : null,
+    orderData.changeValue ? `Troco para: R$ ${orderData.changeValue.toFixed(2)}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 /**
- * Envia pedido para a API do painel
+ * Envia pedido para a API pública do painel.
  */
 export async function sendOrderToAPI(orderData: OrderData): Promise<boolean> {
   try {
-    // Validar dados do pedido
     if (
       !orderData.clientName ||
       !orderData.clientPhone ||
       !orderData.items ||
+      orderData.items.length === 0 ||
       orderData.total <= 0
     ) {
       console.error("Dados do pedido incompletos");
@@ -58,23 +124,32 @@ export async function sendOrderToAPI(orderData: OrderData): Promise<boolean> {
       return false;
     }
 
-    // Preparar dados para enviar à API (formato simplificado)
     const apiOrder = {
-      id: `web-${Date.now()}`,
-      client: orderData.clientName,
-      phone: orderData.clientPhone,
-      address: `${orderData.clientAddress.rua}, ${orderData.clientAddress.numero}${orderData.clientAddress.complemento ? " - " + orderData.clientAddress.complemento : ""} - ${orderData.clientAddress.cep} - ${orderData.clientAddress.cidade}/${orderData.clientAddress.estado}`,
-      items: orderData.items.map((item) => `${item.name} (1x)`).join(", "),
-      total: orderData.total,
+      customerName: orderData.clientName,
+      customerPhone: orderData.clientPhone,
+      address: orderData.clientAddress,
+      notes: buildOrderNotes(orderData),
       paymentMethod: orderData.paymentMethod || "Não especificado",
-      status: "pending",
+      subtotal: orderData.subtotal,
+      shipping: orderData.shipping,
+      discount: orderData.discount,
+      total: orderData.total,
+      changeValue: orderData.changeValue,
       source: "website",
+      items: orderData.items.map((item) => ({
+        menuItemId: item.menuItemId,
+        productName: item.name,
+        name: item.name,
+        quantity: item.quantity || 1,
+        unitPrice: item.price,
+        price: item.price,
+        notes: item.notes,
+      })),
     };
 
     console.log("Enviando pedido para o painel...", apiOrder);
 
-    // Requisição POST para a API
-    const response = await fetch(PAINEL_API_URL, {
+    const response = await fetch(`${PAINEL_API_URL}/orders`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -82,23 +157,17 @@ export async function sendOrderToAPI(orderData: OrderData): Promise<boolean> {
       body: JSON.stringify(apiOrder),
     });
 
-    // Verificar resposta da API
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || result.success === false) {
+      throw new Error(result.error || `HTTP error! status: ${response.status}`);
     }
 
-    const result = await response.json();
-
-    if (result.success || response.ok) {
-      console.log("Pedido enviado com sucesso!", result);
-      toast.success("Pedido recebido!", {
-        description:
-          "Seu pedido foi enviado para o painel. Acompanhe o status no WhatsApp.",
-      });
-      return true;
-    } else {
-      throw new Error(result.error || "Erro desconhecido");
-    }
+    console.log("Pedido enviado com sucesso!", result);
+    toast.success("Pedido recebido!", {
+      description: "Seu pedido foi enviado para o painel. Acompanhe o status no WhatsApp.",
+    });
+    return true;
   } catch (error) {
     console.error("Erro ao enviar pedido:", error);
     toast.error("Erro ao enviar pedido", {
@@ -113,7 +182,7 @@ export async function sendOrderToAPI(orderData: OrderData): Promise<boolean> {
  */
 export function sendOrderViaWhatsApp(orderData: OrderData): void {
   const phoneNumber = "5511941462504"; // Número do restaurante
-  const address = `${orderData.clientAddress.rua}, ${orderData.clientAddress.numero}${orderData.clientAddress.complemento ? " - " + orderData.clientAddress.complemento : ""} - ${orderData.clientAddress.cep} - ${orderData.clientAddress.cidade}/${orderData.clientAddress.estado}`;
+  const address = formatAddress(orderData);
 
   const itemsList = orderData.items
     .map((item) => {
@@ -152,5 +221,6 @@ ${orderData.changeValue ? `*Troco para:* R$ ${orderData.changeValue.toFixed(2).r
 
   const encodedMessage = encodeURIComponent(message);
   const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-  window.open(whatsappURL, "_blank");
+  window.open(whatsappURL, "_blank" );
 }
+
